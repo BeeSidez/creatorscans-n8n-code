@@ -20,10 +20,11 @@ const cleanText = (text) => {
     .trim();
 };
 
-const joinArray = (val) => {
-  if (Array.isArray(val)) return val.join(', ');
-  if (typeof val === 'string') return val;
-  return '';
+const getLabel = (val) => {
+  if (!val) return '';
+  if (Array.isArray(val)) return val.map(item => (item && typeof item === 'object') ? (item.label || '') : String(item)).filter(Boolean).join(', ');
+  if (typeof val === 'object') return val.label || '';
+  return String(val);
 };
 
 // --- Webhook payload (form selections) ---
@@ -38,7 +39,7 @@ const corePainPoints        = cleanText(product['Core pain points solved'] || ''
 const desireDrivers         = cleanText(product['Desire Drivers Summary'] || '');
 const targetAudienceSummary = cleanText(product['Target audience summary'] || '');
 const viewsDisplay          = cleanText(String(product.Views_display || ''));
-const categories            = joinArray(product.Categories || '');
+const categories            = getLabel(product.Categories || '');
 const unitsSold             = cleanText(String(product.Units_sold || ''));
 const averagePrice          = cleanText(String(product.Average_price || ''));
 const productGmv            = cleanText(String(product.Product_gmv || ''));
@@ -47,15 +48,15 @@ const noVideos              = cleanText(String(product['No Videos'] || ''));
 // --- Creator profile ---
 const creator        = $('Get Creator').first().json;
 const creatorName    = cleanText(creator['Full Name'] || '');
-const gender         = cleanText(creator.Gender || '');
+const gender         = getLabel(creator.Gender || '');
 const bio            = cleanText(creator.Bio || '');
 const tagline        = cleanText(creator.Tagline || '');
 const myGoal         = cleanText(creator['My Goal'] || '');
-const lookingFor     = joinArray(creator['Looking For'] || '');
-const generation     = cleanText(creator.Generation || '');
-const heritage       = cleanText(creator.Heritage || '');
-const ethnicBackground = cleanText(creator['Ethnic Background'] || '');
-const regionalAccent = cleanText(creator['Regional Accent'] || '');
+const lookingFor     = getLabel(creator['Looking For'] || '');
+const generation     = getLabel(creator.Generation || '');
+const heritage       = getLabel(creator.Heritage || '');
+const ethnicBackground = getLabel(creator['Ethnic Background'] || '');
+const regionalAccent = getLabel(creator['Regional Accent'] || '');
 const localDialect   = creator['Local Dialect'] === true;
 
 // --- Creator form selections ---
