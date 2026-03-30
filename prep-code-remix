@@ -3,6 +3,7 @@ const cleanText = (text) => {
   return String(text)
     .replace(/[\r\n\t]/g, ' ')
     .replace(/"/g, "'")
+    .replace(/[|@(){}\[\]*#<>\\]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 };
