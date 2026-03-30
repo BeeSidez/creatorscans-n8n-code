@@ -1,0 +1,56 @@
+const cleanText = (text) => {
+  if (!text) return "";
+  return String(text)
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/"/g, "'")
+    .replace(/[|@(){}\[\]*#<>\\%&;]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const getLabel = (val) => {
+  if (!val) return '';
+  if (Array.isArray(val)) return val.map(item => (item && typeof item === 'object') ? (item.label || '') : String(item)).filter(Boolean).join(', ');
+  if (typeof val === 'object') return val.label || '';
+  return String(val);
+};
+
+// --- Webhook payload (form selections) ---
+const webhook = $('Webhook').first().json.body;
+
+const liveType        = getLabel(webhook.liveType || '');
+const topic           = cleanText(webhook.topic || '');
+const notes           = cleanText(webhook.notes || '');
+
+// --- Creator profile ---
+const creator        = $('Get Creator').first().json;
+const creatorName    = cleanText(creator['Full Name'] || '');
+const gender         = getLabel(creator.Gender || '');
+const bio            = cleanText(creator.Bio || '');
+const tagline        = cleanText(creator.Tagline || '');
+const myGoal         = cleanText(creator['My Goal'] || '');
+const lookingFor     = getLabel(creator['Looking For'] || '');
+const generation     = getLabel(creator.Generation || '');
+const regionalAccent = getLabel(creator['Regional Accent'] || '');
+const audienceSize   = cleanText(String(creator['Audience Size'] || creator['Follower Count'] || ''));
+
+return [{
+  json: {
+    liveType,
+    topic,
+    notes,
+    creatorName,
+    gender,
+    bio,
+    tagline,
+    myGoal,
+    lookingFor,
+    generation,
+    regionalAccent,
+    audienceSize,
+  }
+}];
