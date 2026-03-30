@@ -27,78 +27,190 @@ const joinArray = (val) => {
 };
 
 // --- Webhook payload (form selections) ---
-const webhook = $('Webhook').first().json;
+const webhook = $('Webhook').first().json.body;
 
-// --- GCS upload (for Vertex AI file input) ---
-const gcs = $('GCS Upload').first().json;
-const gcsFileName   = gcs.name || '';
-const gcsBucket     = gcs.bucket || '';
-const gcsFileUri    = `gs://${gcsBucket}/${gcsFileName}`;
-
-// --- Product & brand data ---
-const product = $('Get Product').first().json;
-const productTitle            = cleanText(product.product_title || '');
-const brand                   = cleanText(product.brand || '');
-const positioningStatement    = cleanText(product.positioning_statement || '');
-const brandPositioningStatement = cleanText(product.brand_positioning_statement || '');
-const desireDrivers           = cleanText(product.desire_drivers || '');
-const brandContext            = cleanText(product.brand_context || '');
-const corePainPoints          = cleanText(product.core_pain_points_solved || '');
-const targetAudienceSummary   = cleanText(product.target_audience_summary || '');
-const viewsDisplay            = cleanText(String(product.views_display || ''));
-const categories              = joinArray(product.categories || '');
-const unitsSold               = cleanText(String(product.units_sold || ''));
-const averagePrice            = cleanText(String(product.average_price || ''));
-const productGmv              = cleanText(String(product.product_gmv || ''));
+// --- Product data (direct input from Get Product node) ---
+const product = $input.first().json;
+const productTitle          = cleanText(product['Product_title'] || '');
+const positioningStatement  = cleanText(product['Positioning statement'] || '');
+const brandContext          = cleanText(product['Brand context'] || '');
+const corePainPoints        = cleanText(product['Core pain points solved'] || '');
+const desireDrivers         = cleanText(product['Desire Drivers Summary'] || '');
+const targetAudienceSummary = cleanText(product['Target audience summary'] || '');
+const viewsDisplay          = cleanText(String(product.Views_display || ''));
+const categories            = joinArray(product.Categories || '');
+const unitsSold             = cleanText(String(product.Units_sold || ''));
+const averagePrice          = cleanText(String(product.Average_price || ''));
+const productGmv            = cleanText(String(product.Product_gmv || ''));
+const noVideos              = cleanText(String(product['No Videos'] || ''));
 
 // --- Creator profile ---
-const creator = $('Get Creator').first().json;
-const creatorName    = cleanText(creator.full_name || '');
-const pronouns       = cleanText(creator.pronouns || '');
-const tiktokBio      = cleanText(creator.tiktok_bio || '');
-const contentStyle   = joinArray(creator.content_style || '');
-const audienceSize   = cleanText(String(creator.audience_size || ''));
-const personalNotes  = cleanText(creator.personal_notes || '');
-const tagline        = cleanText(creator.tagline || '');
-const myGoal         = cleanText(creator.my_goal || '');
-const interests      = cleanText(creator.interests || '');
-const lookingFor     = joinArray(creator.looking_for || '');
+const creator        = $('Get Creator').first().json;
+const creatorName    = cleanText(creator['Full Name'] || '');
+const gender         = cleanText(creator.Gender || '');
+const bio            = cleanText(creator.Bio || '');
+const tagline        = cleanText(creator.Tagline || '');
+const myGoal         = cleanText(creator['My Goal'] || '');
+const lookingFor     = joinArray(creator['Looking For'] || '');
+const generation     = cleanText(creator.Generation || '');
+const heritage       = cleanText(creator.Heritage || '');
+const ethnicBackground = cleanText(creator['Ethnic Background'] || '');
+const regionalAccent = cleanText(creator['Regional Accent'] || '');
+const localDialect   = creator['Local Dialect'] === true;
 
-// --- Creator form selections (from webhook payload) ---
+// --- Creator form selections ---
 const stage             = webhook.stage || '';
 const concept           = cleanText(webhook.concept || '');
-const format            = cleanText(webhook.format || '');
-const creativeDirection = cleanText(webhook.creative_direction || '');
+const creativeDirection = cleanText(webhook.creativeDirection || '');
+
+// --- Build Language Register Context ---
+
+// Layer 1: Generic UK — always included
+const genericUK = `LAYER 1 - GENERIC UK (applies to all creators):
+Active vocab: knackered, gutted, chuffed, fuming, sorted, quid, proper, dodgy, rubbish, brilliant, cheers, ta, reckon, buzzing
+Discourse markers: tbh, ngl, if I'm honest, can't lie, to be fair, right so, basically, you know what I mean, the thing is
+Intensifiers: proper, well, dead, literally, actually, absolutely
+Emotional reactions: fuming, gutted, buzzing, chuffed, mortified, I'm obsessed, no way
+Hedging: bit of a, sort of, kind of, not gonna lie, if I'm honest, to be fair`;
+
+// Layer 2: Generation — always included
+const generationMap = {
+  'Gen Z': `LAYER 2 - GEN Z (born ~1997-2012):
+Active vocab: it's giving, mid, rizz, low-key, high-key, slay, bet, no cap, ate, rent-free, main character, era, understood the assignment
+Discourse markers: not me [doing thing], the way I..., tell me why..., POV:, ok but, wait because, I fear
+Intensifiers: so, literally (heavy use), genuinely, I cannot stress this enough
+Emotional reactions: I'm screaming, I'm crying, I cannot, I'm OBSESSED, living for this, ate and left no crumbs
+Hedging: I feel like, not to be dramatic but, ok hear me out, idk if it's just me but`,
+  'Millennial': `LAYER 2 - MILLENNIAL (born ~1981-1996):
+Active vocab: adulting, big mood, I can't cope, peak, awks, game changer, honestly, vibes, self-care, manifestation
+Discourse markers: so basically, here's the thing, can we talk about, unpopular opinion, hot take, friendly reminder, just putting this out there
+Intensifiers: literally (moderate), honestly, genuinely, actually, really and truly
+Emotional reactions: I can't cope, I'm done, this is everything, I needed this, not me crying at, living my best life
+Hedging: I think, honestly, not gonna lie, low-key`,
+  'Gen X': `LAYER 2 - GEN X (born ~1965-1980):
+Active vocab: can't be doing with that, bit of a faff, doing my head in, you're having a laugh, crack on, get on with it, straightforward, solid
+Discourse markers: look, the thing is, I'll tell you what, right then, let me tell you, well actually, here's what I think
+Intensifiers: right (right good), proper, absolutely, completely, totally
+Emotional reactions: doing my head in, you're having a laugh, I was gobsmacked, pleased as punch, fed up
+Hedging: I suppose, mind you, having said that, that said`,
+  'Boomer': `LAYER 2 - BOOMER (born ~1946-1964):
+Active vocab: waste of time, too much hassle, tried and tested, makes sense, sensible, practical, straightforward
+Discourse markers: well, you see, the thing is, I must say, let me tell you, in my experience
+Intensifiers: very, rather, quite, extremely, ever so
+Emotional reactions: delighted, thrilled, absolutely marvellous, couldn't believe my eyes, what a treat
+Hedging: I wonder if, perhaps, it seems to me, I'd suggest`
+};
+const generationLayer = generationMap[generation] || `LAYER 2 - GENERATION: ${generation || 'not specified'} - use plain UK English`;
+
+// Layers 3 + 4: Heritage + Regional — only if Local Dialect checkbox is ON
+let heritageLayer = '';
+let regionalLayer = '';
+
+if (localDialect) {
+  const heritageMap = {
+    'nigerian': `LAYER 3 - NIGERIAN BRITISH:
+Active vocab: wahala (trouble/drama), abeg (please/come on), na so (that's how it is), gist (gossip/tell me), oya (come on/let's go), sha (anyway/though), no wahala (no problem)
+Discourse markers: imagine (as emphasis - e.g. "imagine paying £40 for this"), abeg, I'm telling you, the thing is eh, for real for real
+Intensifiers: too much (positive - "this thing is too much"), ehn, o
+Emotional reactions: ah ah, na wa, e shock me
+Usage: Blend Pidgin markers with standard British English. Younger Nigerian British speakers mix freely with Gen Z language.`,
+    'ghanaian': `LAYER 3 - GHANAIAN BRITISH:
+Active vocab: charle/chale (friend/mate), ei (exclamation), herh (exclamation of disbelief), paaa (very/really), as for me, adey (I am)
+Discourse markers: as for me, charle, herh, you see, the thing be say
+Intensifiers: paaa, too much, plenty
+Emotional reactions: herh, ei, charle are you serious, this one dier, I beg
+Usage: Incorporates Twi and Ga markers. More understated than Nigerian Pidgin.`,
+    'caribbean': `LAYER 3 - CARIBBEAN BRITISH:
+Active vocab: bare (a lot), ting (thing), peng (attractive/good), wagwan (what's going on), ends (area/neighbourhood), link (meet up)
+Discourse markers: you know, innit, trust me, listen yeah, hear me now, real talk
+Intensifiers: bare, well, mad, proper
+Emotional reactions: mad ting, that's cold, that's peak, sick (positive), allow it, I'm gassed
+Usage: Jamaican Patois influence. Many terms have crossed into general urban British English especially among younger speakers.`,
+    'south asian': `LAYER 3 - SOUTH ASIAN BRITISH:
+Active vocab: innit (heavy use), blud, fam, mandem, ends, ting, bare, proper, sick, allow it, bro, bruv
+Discourse markers: innit, you know yeah, trust me, swear down, nah but listen
+Intensifiers: bare, well, proper, fully, mad
+Emotional reactions: that's peak, allow it, I'm dead, can't lie, that's cold
+Usage: Heavily overlaps with MLE in urban areas. Distinctive element is often intonation rather than vocabulary.`
+  };
+
+  const heritageSearch = (heritage + ' ' + ethnicBackground).toLowerCase();
+  const matchedHeritage = Object.keys(heritageMap).find(k => heritageSearch.includes(k));
+  heritageLayer = matchedHeritage ? heritageMap[matchedHeritage] : '';
+
+  const regionalMap = {
+    'london': `LAYER 4 - LONDON/SE: Default UK TikTok register. Heavy MLE influence for younger speakers. No special regional markers needed beyond the generation and heritage layers above.`,
+    'north': `LAYER 4 - NORTHERN: owt (anything), nowt (nothing), proper (heavy use), reyt (right/really - Yorkshire), our kid, sound (good), mint (excellent), boss (great - Liverpool)`,
+    'midlands': `LAYER 4 - MIDLANDS: bab (term of endearment), bostin (great), ay up, mardy (moody)`,
+    'scotland': `LAYER 4 - SCOTTISH: wee (small), braw (great), cannae (can't), aye (yes), nae bother (no problem), dinnae (don't), bonnie (beautiful)`,
+    'wales': `LAYER 4 - WELSH: tidy (good/great), lush (lovely/gorgeous), now in a minute (soon), there's lovely`
+  };
+
+  const regionalSearch = regionalAccent.toLowerCase();
+  const matchedRegion = Object.keys(regionalMap).find(k => regionalSearch.includes(k));
+  regionalLayer = matchedRegion ? regionalMap[matchedRegion] : '';
+}
+
+const dialectInstruction = localDialect
+  ? `LOCAL DIALECT: ENABLED. Heritage and regional markers can be used. Max 1-2 heritage markers across the entire script. Seasoning, not the dish.`
+  : `LOCAL DIALECT: DISABLED. Use Generic UK and Generation layers only. Do NOT use heritage or regional markers even though heritage and region data is visible above.`;
+
+const deploymentRules = `IDENTITY LANGUAGE BY SECTION:
+Hook: HEAVY - up to 3-4 markers. This is the permission zone. Identity signals "this is someone like me."
+On-ramp: MEDIUM - maintain the connection from the hook.
+Problem/Agitation: MEDIUM-HEAVY - pain described in their own language lands harder.
+Product Intro: LIGHT - clarity over personality. Do not let markers obscure what the product is.
+Demonstration: MINIMAL - 0-1 markers. Visuals do the work. Keep language clean and instructional.
+Proof/Transformation: MEDIUM - natural language makes testimonials believable.
+CTA: LIGHT TOUCH - one phrase that sounds like them, then a clear instruction.`;
+
+const authenticityCheck = `AUTHENTICITY RULES:
+1. Would this creator actually say this? If in doubt, go neutral.
+2. Read it aloud. If it sounds like a slang dictionary, strip it back.
+3. Identity language should enhance the message, not distract from it.
+4. Forced slang is always worse than no slang. Clean English that sounds genuine beats performative markers.
+5. When in doubt, use fewer markers. You can always add personality. You cannot easily undo cringe.`;
+
+const baseLevel = `BASE LANGUAGE LEVEL: Write at a Grade 7 reading level (age 12-13 equivalent). Short sentences. Everyday words. No jargon. Identity markers sit on top of this baseline - they add flavour, not replace clarity.`;
+
+const languageRegisterContext = [
+  baseLevel,
+  genericUK,
+  generationLayer,
+  heritageLayer,
+  regionalLayer,
+  dialectInstruction,
+  deploymentRules,
+  authenticityCheck
+].filter(Boolean).join('\n\n');
 
 return [{
   json: {
-    gcsFileUri,
     productTitle,
-    brand,
     positioningStatement,
-    brandPositioningStatement,
-    desireDrivers,
     brandContext,
     corePainPoints,
+    desireDrivers,
     targetAudienceSummary,
     viewsDisplay,
     categories,
     unitsSold,
     averagePrice,
     productGmv,
+    noVideos,
     creatorName,
-    pronouns,
-    tiktokBio,
-    contentStyle,
-    audienceSize,
-    personalNotes,
+    gender,
+    bio,
     tagline,
     myGoal,
-    interests,
     lookingFor,
+    generation,
+    heritage,
+    ethnicBackground,
+    regionalAccent,
     stage,
     concept,
-    format,
     creativeDirection,
+    languageRegisterContext,
   }
 }];
