@@ -1,6 +1,10 @@
 const cleanText = (text) => {
   if (!text) return "";
-  return String(text);
+  return String(text)
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/"/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 const getLabel = (val) => {
