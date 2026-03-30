@@ -55,6 +55,26 @@ const localDialect   = creator['Local Dialect'] === true;
 const stage             = getLabel(webhook.stage || '');
 const concept           = cleanText(webhook.concept || '');
 const creativeDirection = cleanText(webhook.creativeDirection || '');
+const contentType       = cleanText(webhook.contentType || 'shop');
+
+// --- Build Script Writing Principles ---
+
+const shopPrinciples = `Customer-copy-voice principles: Write for the viewer, not the product. Every line passes the so-what test: what does this mean for the person watching? Lead with outcome, support with mechanism. Translate every insider term into what it means for the person. Be specific about things the audience already cares about. Match register to context. Never use em dashes. Match pain-first or desire-first energy throughout the entire script.`;
+
+const organicPrinciples = `Audience-copy-voice principles: The viewer is the main character. The creator exists as the guide, not the hero. Share your story and experience only in service of what the viewer walks away with. Be irrationally generous: give away everything. Teach the whole thing. The viewer should feel like they are getting away with something. Be specific: could the viewer actually do or understand something after watching? If not, go deeper. Show the mechanics, not just the outcome. Explain the why and the how, not just the what. Have a point of view. If the creator thinks something is wrong or different, say it. Opinions backed by experience earn trust. The CTA grows the audience: follow for more, share with someone who needs this, save for later. Never direct the viewer to buy a product. Optimise for saves and shares - would someone screenshot this? Would they send it to a friend unprompted? Never use em dashes. Write how people actually talk: short sentences, plain words, no filler phrases.`;
+
+const rawPrinciples = contentType === 'organic' ? organicPrinciples : shopPrinciples;
+
+const scriptWritingPrinciples = rawPrinciples
+  .replace(/[\r\n\t]/g, ' ')
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/[\u201C\u201D]/g, "'")
+  .replace(/[\u2013\u2014]/g, '-')
+  .replace(/\u2026/g, '...')
+  .replace(/"/g, "'")
+  .replace(/[{}\\%&;]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
 
 // --- Build Language Register Context ---
 
@@ -214,6 +234,8 @@ return [{
     stage,
     concept,
     creativeDirection,
+    contentType,
+    scriptWritingPrinciples,
     languageRegisterContext,
   }
 }];
