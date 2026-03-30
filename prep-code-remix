@@ -1,0 +1,104 @@
+const cleanText = (text) => {
+  if (!text) return "";
+  return text
+    .replace(/[\u{1F600}-\u{1F64F}]/gu, "")
+    .replace(/[\u{1F300}-\u{1F5FF}]/gu, "")
+    .replace(/[\u{1F680}-\u{1F6FF}]/gu, "")
+    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, "")
+    .replace(/[\u{2600}-\u{26FF}]/gu, "")
+    .replace(/[\u{2700}-\u{27BF}]/gu, "")
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, "")
+    .replace(/[\u{200D}]/gu, "")
+    .replace(/[\u{20E3}]/gu, "")
+    .replace(/[\u{E0020}-\u{E007F}]/gu, "")
+    .replace(/[\u{1F900}-\u{1F9FF}]/gu, "")
+    .replace(/[\u{1FA00}-\u{1FA6F}]/gu, "")
+    .replace(/[\u{1FA70}-\u{1FAFF}]/gu, "")
+    .replace(/[\*\(\)\[\]\•\n]/g, "")
+    .replace(/[^\x20-\x7E\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const joinArray = (val) => {
+  if (Array.isArray(val)) return val.join(', ');
+  if (typeof val === 'string') return val;
+  return '';
+};
+
+// --- Webhook payload (form selections) ---
+const webhook = $('Webhook').first().json;
+
+// --- GCS upload (for Vertex AI file input) ---
+const gcs = $('GCS Upload').first().json;
+const gcsFileName   = gcs.name || '';
+const gcsBucket     = gcs.bucket || '';
+const gcsFileUri    = `gs://${gcsBucket}/${gcsFileName}`;
+
+// --- Product & brand data ---
+const product = $('Get Product').first().json;
+const productTitle            = cleanText(product.product_title || '');
+const brand                   = cleanText(product.brand || '');
+const positioningStatement    = cleanText(product.positioning_statement || '');
+const brandPositioningStatement = cleanText(product.brand_positioning_statement || '');
+const desireDrivers           = cleanText(product.desire_drivers || '');
+const brandContext            = cleanText(product.brand_context || '');
+const corePainPoints          = cleanText(product.core_pain_points_solved || '');
+const targetAudienceSummary   = cleanText(product.target_audience_summary || '');
+const viewsDisplay            = cleanText(String(product.views_display || ''));
+const categories              = joinArray(product.categories || '');
+const unitsSold               = cleanText(String(product.units_sold || ''));
+const averagePrice            = cleanText(String(product.average_price || ''));
+const productGmv              = cleanText(String(product.product_gmv || ''));
+
+// --- Creator profile ---
+const creator = $('Get Creator').first().json;
+const creatorName    = cleanText(creator.full_name || '');
+const pronouns       = cleanText(creator.pronouns || '');
+const tiktokBio      = cleanText(creator.tiktok_bio || '');
+const contentStyle   = joinArray(creator.content_style || '');
+const audienceSize   = cleanText(String(creator.audience_size || ''));
+const personalNotes  = cleanText(creator.personal_notes || '');
+const tagline        = cleanText(creator.tagline || '');
+const myGoal         = cleanText(creator.my_goal || '');
+const interests      = cleanText(creator.interests || '');
+const lookingFor     = joinArray(creator.looking_for || '');
+
+// --- Creator form selections (from webhook payload) ---
+const stage             = webhook.stage || '';
+const concept           = cleanText(webhook.concept || '');
+const format            = cleanText(webhook.format || '');
+const creativeDirection = cleanText(webhook.creative_direction || '');
+
+return [{
+  json: {
+    gcsFileUri,
+    productTitle,
+    brand,
+    positioningStatement,
+    brandPositioningStatement,
+    desireDrivers,
+    brandContext,
+    corePainPoints,
+    targetAudienceSummary,
+    viewsDisplay,
+    categories,
+    unitsSold,
+    averagePrice,
+    productGmv,
+    creatorName,
+    pronouns,
+    tiktokBio,
+    contentStyle,
+    audienceSize,
+    personalNotes,
+    tagline,
+    myGoal,
+    interests,
+    lookingFor,
+    stage,
+    concept,
+    format,
+    creativeDirection,
+  }
+}];
