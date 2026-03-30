@@ -43,7 +43,7 @@ const regionalAccent = getLabel(creator['Regional Accent'] || '');
 const localDialect   = creator['Local Dialect'] === true;
 
 // --- Creator form selections ---
-const stage             = webhook.stage || '';
+const stage             = getLabel(webhook.stage || '');
 const concept           = cleanText(webhook.concept || '');
 const creativeDirection = cleanText(webhook.creativeDirection || '');
 
