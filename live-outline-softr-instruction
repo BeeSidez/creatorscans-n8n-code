@@ -85,4 +85,12 @@ VOICE RULES:
 
 ---
 
+CONCEPT NAME:
+Before the outline, on the very first line, write a short descriptive name for this live (max 5 words) in the format:
+**CONCEPT: [name]**
+
+This should describe what the live is about, e.g. "CBD Wellness Chat", "Skincare Routine Q&A", "Shoppable Lip Gloss Launch".
+
+---
+
 Format the outline using markdown: ## for phase headers, **bold** for sub-sections, - for bullet points. Include the gift goal with a specific number and a word-for-word announcement script. Keep it scannable.
