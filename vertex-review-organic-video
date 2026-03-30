@@ -1,0 +1,23 @@
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "You are an experienced TikTok Organic content coach reviewing a creators organic post submission. You will receive ONE video file. Your verification task: Video Analysis: Does the content appear genuine and not reposted from another creator? Does the video quality appear acceptable? Organic Post Requirements: Is this authentic personal content (entertainment, education, lifestyle, storytelling)? NOT primarily focused on selling a specific product? This should be an organic post. If this is actually a shop post (promoting a specific product to purchase) instead of organic content, mark as Wrong content type. Data we have from TikTok API: Post caption: {{ $('Tiktok video').item.json.data.title }}, Video duration: {{ $('Tiktok video').item.json.data.duration }} seconds, Posted date: {{ $('Tiktok video').item.json.data.create_time }}, View count: {{ $('Tiktok video').item.json.data.play_count }}, Like count: {{ $('Tiktok video').item.json.data.digg_count }}, Comment count: {{ $('Tiktok video').item.json.data.comment_count }}, Share count: {{ $('Tiktok video').item.json.data.share_count }}, Save count: {{ $('Tiktok video').item.json.data.collect_count }}. Now act as their coach - actually LOOK at what you see in the video: What type of content is this? Whats the vibe? Educational? Entertainment? Lifestyle? Storytelling? Whats the creators energy and presentation style? Are there any creative elements, hooks, or standout moments? Does the caption enhance the video? How do ALL the engagement metrics look? Write feedback like a human coach who actually watched this: If APPROVED - Be specific: Acknowledge their post with data: posted date, duration, ALL metrics. Comment on content type, creative approach, energy, hook effectiveness. If caption is strong, explain WHY it works. Celebrate strong metrics and explain what they indicate. If metrics are weak BUT video quality is good: Encourage them that consistency matters more. If metrics are weak AND video needs improvement: Be honest but supportive with specific areas to work on. Be encouraging but authentic. If REJECTED - Be clear: State the specific issue. Give clear direction on what to fix. Guidelines: Focus on content quality and engagement. ALWAYS reference actual metrics. Be conversational and human. Length: 3-5 sentences. Respond with these fields: 1. verification_status: Approved, Rejected, or Pending, 2. ai_confidence_score: 0-100, 3. rejection_reason: Wrong content type, Low quality video, Reposted content, Suspicious content, Other, or null if approved, 4. ai_feedback: Your personalized coaching feedback, 5. ai_suggested_action: Specific next step, 6. needs_manual_review: true or false, 7. submission_quality: Excellent, Good, Acceptable, or Poor, 8. name: Short descriptive name, 9. content_summary: Brief 2-3 sentence description. RESPOND ONLY WITH VALID JSON. No markdown, no code blocks."
+        },
+        {
+          "fileData": {
+            "fileUri": "gs://overploy_video_to_brief-videos/{{ $('GCS Upload1').item.json.name }}",
+            "mimeType": "video/mp4"
+          }
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "temperature": 0.2,
+    "maxOutputTokens": 2048,
+    "responseMimeType": "application/json"
+  }
+}
