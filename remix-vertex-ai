@@ -8,17 +8,16 @@
         },
         {
           "fileData": {
-            "mimeType": "video/*",
-            "file_uri": "{{ $json.gcsFileUri }}"
+            "fileUri": "gs://overploy_video_to_brief-videos/{{ $('GCS Upload').item.json.name }}",
+            "mimeType": "video/mp4"
           }
         }
       ]
     }
   ],
   "generationConfig": {
-    "temperature": 0.7,
-    "top_p": 1,
-    "top_k": 40,
-    "max_output_tokens": 8192
+    "temperature": 0.2,
+    "maxOutputTokens": 2048,
+    "responseMimeType": "application/json"
   }
 }
