@@ -2,8 +2,12 @@ const cleanText = (text) => {
   if (!text) return "";
   return String(text)
     .replace(/[\r\n\t]/g, ' ')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
     .replace(/"/g, "'")
-    .replace(/[|@(){}\[\]*#<>\\]/g, '')
+    .replace(/[|@(){}\[\]*#<>\\%&;]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 };
@@ -171,7 +175,17 @@ const languageRegisterContext = [
   dialectInstruction,
   deploymentRules,
   authenticityCheck
-].filter(Boolean).join(' | ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+].filter(Boolean)
+  .join(' | ')
+  .replace(/[\r\n\t]/g, ' ')
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/[\u201C\u201D]/g, "'")
+  .replace(/[\u2013\u2014]/g, '-')
+  .replace(/\u2026/g, '...')
+  .replace(/"/g, "'")
+  .replace(/[{}\\%&;]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
 
 return [{
   json: {
