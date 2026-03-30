@@ -166,7 +166,7 @@ const languageRegisterContext = [
   dialectInstruction,
   deploymentRules,
   authenticityCheck
-].filter(Boolean).join('\n\n');
+].filter(Boolean).join(' | ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
 
 return [{
   json: {
