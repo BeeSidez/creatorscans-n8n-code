@@ -40,6 +40,7 @@ return storyboard.map(frame => {
       section: toArray(frame.section),
       shot_type: toArray(frame.shot_type),
       voiceover_tag: toArray(frame.voiceover_tag),
+      caption_tag: toArray(frame.caption_tag),
       visual_action_tag: toArray(frame.visual_action_tag),
 
       // Long text fields
