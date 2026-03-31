@@ -38,9 +38,10 @@ return storyboard.map(frame => {
       // Multi-select fields → arrays (Softr needs arrays, not comma strings)
       section: toArray(frame.section),
       shot_type: toArray(frame.shot_type),
-      voiceover_tag: toArray(frame.voiceover_tag),
-      caption_tag: toArray(frame.caption_tag),
-      visual_action_tag: toArray(frame.visual_action_tag),
+      // Single-select tag fields → plain strings
+      voiceover_tag: clean(frame.voiceover_tag),
+      caption_tag: clean(frame.caption_tag),
+      visual_action_tag: clean(frame.visual_action_tag),
 
       // Long text fields
       section_detail: clean(frame.section_detail),
