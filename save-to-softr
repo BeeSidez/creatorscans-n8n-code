@@ -1,0 +1,144 @@
+// n8n Code node — Save script + storyboard frames to Softr Database
+// Place this AFTER the parse node (parse-script or parse-remix)
+//
+// SETUP: Create these n8n credentials/variables:
+// - HTTP Header Auth with Softr-Api-Key header
+// - Or pass API key directly (replace SOFTR_API_KEY below)
+//
+// This node:
+// 1. Creates ONE parent record in the Script table
+// 2. Creates ONE record per storyboard frame in the Storyboard/Script table
+// 3. Links them via the related field
+
+const SOFTR_API_KEY = "qAjFrd5QJ8YhDjRORuTs98e75";
+const DB_ID = "11fb1760-0482-40fb-be23-52537f179e3f";
+const SCRIPT_TABLE = "ct0pnjOpnV7oy8";       // Script table ID
+const STORYBOARD_TABLE = "moJabgXWJZmGeK";   // Storyboard/Script table ID
+const BASE_URL = `https://tables-api.softr.io/api/v1/databases/${DB_ID}/tables`;
+
+// --- Get data from previous nodes ---
+const parsed = $input.first().json;
+const script = parsed.script;
+const storyboard = parsed.storyboard;
+
+// Get IDs from webhook (adjust node names to match your workflow)
+const webhookData = $('Webhook').first().json.body || {};
+const userId = webhookData.userId || null;
+const brandId = webhookData.brandId || null;
+const productId = webhookData.productId || null;
+const videoId = webhookData.videoId || null;
+const contentType = webhookData.contentType || 'shop';
+
+// Determine type: "script" if Path A (reverse-engineering), "remix" if Path B
+// Adjust this based on how your Switch node routes
+const scriptType = webhookData.scriptType || 'remix';
+
+// --- Helper: create a record via Softr API ---
+async function createRecord(tableId, fields) {
+  const response = await fetch(`${BASE_URL}/${tableId}/records`, {
+    method: 'POST',
+    headers: {
+      'Softr-Api-Key': SOFTR_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ fields }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`Softr API error: ${JSON.stringify(data)}`);
+  }
+  return data.data;
+}
+
+// --- 1. Create parent record in Script table ---
+// Map field names to your Script table field IDs
+// Replace these with your actual Softr field IDs
+const scriptRecord = await createRecord(SCRIPT_TABLE, {
+  // Concept name — replace FIELD_ID with actual ID
+  "CONCEPT_NAME_FIELD": script.concept_name || '',
+  // Full script
+  "FULL_SCRIPT_FIELD": script.full_script || '',
+  // Concept
+  "CONCEPT_FIELD": script.concept || '',
+  // Format (multi-select — needs to match exact option label)
+  "FORMAT_FIELD": script.format || '',
+  // Stage (select — full label)
+  "STAGE_FIELD": script.stage || '',
+  // Creative direction
+  "CREATIVE_DIRECTION_FIELD": script.creative_direction || '',
+  // Type (single select: script or remix)
+  "TYPE_FIELD": scriptType,
+  // Content type (single select: Shop, Organic, Live)
+  "CONTENT_TYPE_FIELD": contentType === 'organic' ? 'Organic' : 'Shop',
+  // Related fields — use [{id: "recordId"}] format for Softr
+  // Uncomment and set field IDs once you have them:
+  // "USER_FIELD": userId ? [{ id: userId }] : [],
+  // "BRAND_FIELD": brandId ? [{ id: brandId }] : [],
+  // "PRODUCT_FIELD": productId ? [{ id: productId }] : [],
+  // "VIDEO_FIELD": videoId ? [{ id: videoId }] : [],
+});
+
+const parentRecordId = scriptRecord.id;
+
+// --- 2. Create one record per storyboard frame ---
+const frameResults = [];
+
+for (let i = 0; i < storyboard.length; i++) {
+  const frame = storyboard[i];
+
+  const frameRecord = await createRecord(STORYBOARD_TABLE, {
+    // Concept name (repeated from parent)
+    "CONCEPT_NAME_FIELD": script.concept_name || '',
+    // Frame number
+    "FRAME_FIELD": frame.frame_number,
+    // Section (multi-select)
+    "SECTION_FIELD": frame.section || '',
+    // Section details (long text)
+    "SECTION_DETAIL_FIELD": frame.section_detail || '',
+    // Shot type (multi-select)
+    "SHOT_TYPE_FIELD": frame.shot_type || '',
+    // Shot detail (long text)
+    "SHOT_DETAIL_FIELD": frame.shot_detail || '',
+    // Voiceover tag (multi-select)
+    "VOICEOVER_TAG_FIELD": frame.voiceover_tag || '',
+    // Voiceover (long text)
+    "VOICEOVER_FIELD": frame.voiceover || '',
+    // Script (long text)
+    "SCRIPT_FIELD": frame.script === 'None' || frame.script === null ? '' : (frame.script || ''),
+    // Caption (long text)
+    "CAPTION_FIELD": frame.caption === 'None' || frame.caption === null ? '' : (frame.caption || ''),
+    // Caption detail (long text)
+    "CAPTION_DETAIL_FIELD": frame.caption_detail === 'None' || frame.caption_detail === null ? '' : (frame.caption_detail || ''),
+    // Visual action tag (multi-select)
+    "VISUAL_TAG_FIELD": frame.visual_action_tag || '',
+    // Visual action (long text)
+    "VISUAL_ACTION_FIELD": frame.visual_action || '',
+    // Visual action detail (long text)
+    "VISUAL_ACTION_DETAIL_FIELD": frame.visual_action_detail || '',
+    // Creative note (long text)
+    "CREATIVE_NOTE_FIELD": frame.creative_note || '',
+    // Timestamp (number) — script path only
+    "TIMESTAMP_FIELD": frame.timestamp !== undefined ? frame.timestamp : null,
+    // Screenshot URL — script path only
+    "SCREENSHOT_FIELD": frame.screenshot_url || '',
+    // Link to parent Script record
+    "SCRIPT_TABLE_FIELD": [{ id: parentRecordId }],
+    // Related fields from parent
+    // "BRAND_FIELD": brandId ? [{ id: brandId }] : [],
+    // "PRODUCT_FIELD": productId ? [{ id: productId }] : [],
+  });
+
+  frameResults.push({
+    frameNumber: frame.frame_number,
+    recordId: frameRecord.id,
+  });
+}
+
+// --- 3. Return results ---
+return [{
+  json: {
+    parentRecordId,
+    framesCreated: frameResults.length,
+    frames: frameResults,
+  }
+}];
