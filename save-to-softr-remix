@@ -3,11 +3,11 @@
 // The NEXT node (Softr create record / HTTP request) runs once per item automatically
 
 // Get the parent Script record ID
-// Script path: $('Script1')  |  Remix path: $('Script2')
-const scriptRecordId = $('Script1').first().json.id;
+// Remix path
+const scriptRecordId = $('Script2').first().json.id;
 
-// Get parsed data from the parse node (Code in JavaScript)
-const parsed = $('Code in JavaScript').first().json;
+// Get parsed data from the parse node (Code in JavaScript1)
+const parsed = $('Code in JavaScript1').first().json;
 const script = parsed.script;
 const storyboard = parsed.storyboard;
 
