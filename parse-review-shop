@@ -1,0 +1,45 @@
+// Parse Shop Review — extracts ALL fields from Vertex AI response
+const items = $input.all();
+
+return items.map(item => {
+  const rawResponse = item.json.candidates[0].content.parts[0].text;
+
+  let parsed;
+  if (typeof rawResponse === 'string') {
+    let clean = rawResponse.trim();
+    if (clean.startsWith('```json')) {
+      clean = clean.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    }
+    clean = clean.replace(/\bNone\b/g, 'null');
+    parsed = JSON.parse(clean);
+  } else {
+    parsed = rawResponse;
+  }
+
+  return {
+    json: {
+      verification_status: parsed.verification_status || '',
+      ai_confidence_score: parsed.ai_confidence_score || 0,
+      rejection_reason: parsed.rejection_reason || null,
+      concept_name: parsed.concept_name || '',
+      content_summary: parsed.content_summary || '',
+      product_identified: parsed.product_identified || null,
+      overall_score: parsed.overall_score || 0,
+      overall_comment: parsed.overall_comment || '',
+      focus_for_next_video: parsed.focus_for_next_video || '',
+      metrics_analysis: parsed.metrics_analysis || '',
+      score_1: parsed.score_1 || null,
+      score_1_comment: parsed.score_1_comment || '',
+      score_2: parsed.score_2 || null,
+      score_2_comment: parsed.score_2_comment || '',
+      score_3: parsed.score_3 || null,
+      score_3_comment: parsed.score_3_comment || '',
+      score_4: parsed.score_4 || null,
+      score_4_comment: parsed.score_4_comment || '',
+      score_5: parsed.score_5 || null,
+      score_5_comment: parsed.score_5_comment || '',
+      submission_quality: parsed.submission_quality || '',
+      needs_manual_review: parsed.needs_manual_review || false,
+    }
+  };
+});
