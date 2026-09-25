@@ -1,0 +1,194 @@
+{
+  "name": "TikTok Connect (Full)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tiktok-connect",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 400],
+      "webhookId": "tiktok-connect"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/oauth/token/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" },
+            { "name": "Cache-Control", "value": "no-cache" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "client_key", "value": "aw3f0uyendq72iso" },
+            { "name": "client_secret", "value": "PASTE_YOUR_PRODUCTION_SECRET_HERE" },
+            { "name": "code", "value": "={{ $json.body.code }}" },
+            { "name": "grant_type", "value": "authorization_code" },
+            { "name": "redirect_uri", "value": "https://www.creatorscans.com/dashboard" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tiktok-token-node",
+      "name": "TikTok Token Exchange",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,username,display_name,avatar_url,avatar_url_100,avatar_large_url,bio_description,profile_deep_link,is_verified,follower_count,following_count,likes_count,video_count",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $('TikTok Token Exchange').item.json.access_token }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "tiktok-user-info-node",
+      "name": "TikTok User Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,duration,cover_image_url,embed_link,embed_html,share_url,create_time,like_count,comment_count,share_count,view_count",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $('TikTok Token Exchange').item.json.access_token }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"max_count\": 20\n}",
+        "options": {}
+      },
+      "id": "tiktok-video-list-node",
+      "name": "TikTok Video List (latest 20)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://tables-api.softr.io/api/v1/databases/11fb1760-0482-40fb-be23-52537f179e3f/tables/yZSKdACWobx3KB/records/{{ $('Webhook').item.json.body.user_id }}?fieldNames=true",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Softr-Api-Key", "value": "qAjFrd5QJ8YhDjRORuTs98e75" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"TikTok Open ID\": \"{{ $('TikTok Token Exchange').item.json.open_id }}\",\n    \"TikTok Access Token\": \"{{ $('TikTok Token Exchange').item.json.access_token }}\",\n    \"TikTok Refresh Token\": \"{{ $('TikTok Token Exchange').item.json.refresh_token }}\",\n    \"TikTok Token Expires At\": \"{{ new Date(Date.now() + $('TikTok Token Exchange').item.json.expires_in * 1000).toISOString() }}\",\n    \"TikTok Username\": \"{{ $('TikTok User Info').item.json.data.user.username }}\",\n    \"TikTok Display Name\": \"{{ $('TikTok User Info').item.json.data.user.display_name }}\",\n    \"Avatar\": [{\"url\": \"{{ $('TikTok User Info').item.json.data.user.avatar_large_url }}\"}],\n    \"Bio\": \"{{ $('TikTok User Info').item.json.data.user.bio_description }}\",\n    \"TikTok Is Verified\": {{ $('TikTok User Info').item.json.data.user.is_verified }},\n    \"TikTok Followers\": {{ $('TikTok User Info').item.json.data.user.follower_count }},\n    \"TikTok Following\": {{ $('TikTok User Info').item.json.data.user.following_count }},\n    \"TikTok Likes\": {{ $('TikTok User Info').item.json.data.user.likes_count }},\n    \"TikTok Video Count\": {{ $('TikTok User Info').item.json.data.user.video_count }}\n  }\n}",
+        "options": {}
+      },
+      "id": "update-softr-user-node",
+      "name": "Update Softr User (tokens + profile + stats)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data.videos",
+        "options": {}
+      },
+      "id": "split-videos-node",
+      "name": "Split Videos",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [920, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "last-7-days",
+              "leftValue": "={{ $json.create_time }}",
+              "rightValue": "={{ Math.floor(Date.now() / 1000) - 604800 }}",
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "filter-7-days-node",
+      "name": "Filter Last 7 Days",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1140, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://tables-api.softr.io/api/v1/databases/11fb1760-0482-40fb-be23-52537f179e3f/tables/AU7Wswx4IMlDKL/records?fieldNames=true",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Softr-Api-Key", "value": "qAjFrd5QJ8YhDjRORuTs98e75" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"TikTok Video ID\": \"{{ $json.id }}\",\n    \"User\": [{ \"id\": \"{{ $('Webhook').item.json.body.user_id }}\" }],\n    \"Source\": \"API\",\n    \"Status\": \"Published\",\n    \"Title\": \"{{ $json.title }}\",\n    \"Description\": \"{{ $json.video_description }}\",\n    \"Duration (sec)\": {{ $json.duration }},\n    \"Cover Image\": [{ \"url\": \"{{ $json.cover_image_url }}\" }],\n    \"Embed Link\": \"{{ $json.embed_link }}\",\n    \"Share URL\": \"{{ $json.share_url }}\",\n    \"Posted Date\": \"{{ new Date($json.create_time * 1000).toISOString() }}\",\n    \"Views\": {{ $json.view_count }},\n    \"Likes\": {{ $json.like_count }},\n    \"Comments\": {{ $json.comment_count }},\n    \"Shares\": {{ $json.share_count }}\n  }\n}",
+        "options": {}
+      },
+      "id": "insert-video-node",
+      "name": "Insert Video to Softr",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 500]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "TikTok Token Exchange", "type": "main", "index": 0 }]]
+    },
+    "TikTok Token Exchange": {
+      "main": [[
+        { "node": "TikTok User Info", "type": "main", "index": 0 },
+        { "node": "TikTok Video List (latest 20)", "type": "main", "index": 0 }
+      ]]
+    },
+    "TikTok User Info": {
+      "main": [[{ "node": "Update Softr User (tokens + profile + stats)", "type": "main", "index": 0 }]]
+    },
+    "TikTok Video List (latest 20)": {
+      "main": [[{ "node": "Split Videos", "type": "main", "index": 0 }]]
+    },
+    "Split Videos": {
+      "main": [[{ "node": "Insert Video to Softr", "type": "main", "index": 0 }]]
+    },
+    "Filter Last 7 Days": {
+      "main": [[{ "node": "Insert Video to Softr", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
